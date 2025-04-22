@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.database import engine, Base
 from app.routes import files
+
+# automatically create all tables in the database (only run once)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
