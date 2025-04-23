@@ -1,5 +1,24 @@
 from sqlalchemy import Column, Integer, String
 from app.database import Base
+from passlib.context import CryptContext
+
+myctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class User(Base):
+  __tablename__ = "users"
+
+  id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+  name = Column(String, nullable=False)
+  email = Column(String, nullable=False, unique=True)
+  hashed_password = Column(String, nullable=False)
+
+  @classmethod
+  def get_password_hash(cls, password):
+    return myctx.hash(password)
+  
+  def verify_password(self, password: str) -> bool:
+    return myctx.verify(password, self.hashed_password)
+  
 
 class File(Base):
   __tablename__ = "files"
