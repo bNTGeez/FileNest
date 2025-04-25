@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 class UserBase(BaseModel):
@@ -17,8 +17,7 @@ class UserResponse(BaseModel):
   name: str
   email: EmailStr
 
-  class Config:
-    from_attributes = True # allows us to convert database objects to api response objects
+  model_config = ConfigDict(from_attributes=True) # allows us to convert database objects to api response objects
 
 class Token(BaseModel):
   access_token: str
@@ -42,12 +41,11 @@ class FolderResponse(BaseModel):
   id: int
   name: str
   description: Optional[str] = None
-  user_id: str
+  user_id: int
   created_at: datetime
   updated_at: datetime
 
-  class Config:
-    from_attributes = True 
+  model_config = ConfigDict(from_attributes=True)
 
 class FolderList(BaseModel):
   folders: List[FolderResponse]
@@ -69,20 +67,21 @@ class FlashcardResponse(BaseModel):
   id: int
   question: str
   answer: str
-  user_id: str
+  user_id: int
   folder_id: int
   created_at: datetime
   updated_at: datetime
 
-  class Config:
-    from_attributes = True 
+  model_config = ConfigDict(from_attributes=True)
+
+class FlashcardGenerationRequest(BaseModel):
+  topic: str
+  num_flashcards: Optional[int] = 10
+  focus: Optional[str] = None
 
 class FlashcardList(BaseModel):
   flashcards: List[FlashcardResponse]
 
-class FlashcardGenerationOptions(BaseModel):
-  num_cards: Optional[int] = 10
-  focus_area: Optional[str] = None
 
 class ShareBase(BaseModel):
   folder_id: int
@@ -99,7 +98,7 @@ class ShareUpdate(BaseModel):
 class ShareResponse(BaseModel):
   id: int
   folder_id: int
-  user_id: int
+  user_id: Optional[int] = None
   user_email: Optional[EmailStr] = None
   permission_type: str
   invitation_accepted: bool
@@ -107,8 +106,7 @@ class ShareResponse(BaseModel):
   created_at: datetime
   updated_at: datetime
 
-  class Config:
-    from_attributes = True 
+  model_config = ConfigDict(from_attributes=True)
 
 class ShareList(BaseModel):
   shares: List[ShareResponse]

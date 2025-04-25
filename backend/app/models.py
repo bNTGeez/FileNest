@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 from passlib.context import CryptContext
@@ -34,7 +34,7 @@ class File(Base):
   id = Column(Integer, primary_key=True, index=True) # auto-incrementing primary key, indexing for faster lookups
   filename = Column(String, nullable=False) # original filename uploaded by user
   s3_key = Column(String, nullable=False) # unique identifier for the file in S3
-  user_id = Column(String, nullable=False) # user id of the owner (extract from JWT token)
+  user_id = Column(Integer, nullable=False) # user id of the owner (extract from JWT token)
   folder = Column(String, nullable=True) # folder name where the file is stored (optional)
   content_type = Column(String, nullable=True) # MIME type of the file (e.g. "application/pdf", "image/png")
   uploaded_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc)) # timestamp of when the file was uploaded
@@ -47,7 +47,7 @@ class StudyFolder(Base):
 
   id = Column(Integer, primary_key=True, index=True)
   name = Column(String, nullable=False)
-  user_id = Column(String, nullable=False)  # Owner of the folder
+  user_id = Column(Integer, nullable=False)  # Owner of the folder
   description = Column(String, nullable=True)
   created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
   updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
@@ -62,7 +62,7 @@ class Flashcard(Base):
   id = Column(Integer, primary_key=True, index=True)
   question = Column(String, nullable=False)
   answer = Column(String, nullable=False)
-  user_id = Column(String, nullable=False)
+  user_id = Column(Integer, nullable=False)
   created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
   updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
   folder_id = Column(Integer, ForeignKey('study_folders.id'), nullable=False)
@@ -74,7 +74,7 @@ class FolderShare(Base):
   
   id = Column(Integer, primary_key=True, index=True)
   folder_id = Column(Integer, ForeignKey('study_folders.id'), nullable=False)
-  user_id = Column(Integer, ForeignKey('users.id'), nullable=False)  # User who has access
+  user_id = Column(Integer, ForeignKey('users.id'), nullable=True)  # User who has access (can be null for invitations to non-registered users)
   permission_type = Column(String, nullable=False, default=PermissionType.READ.value)  # read, edit, admin
   created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
   updated_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
