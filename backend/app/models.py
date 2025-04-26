@@ -35,7 +35,6 @@ class File(Base):
   filename = Column(String, nullable=False) # original filename uploaded by user
   s3_key = Column(String, nullable=False) # unique identifier for the file in S3
   user_id = Column(Integer, nullable=False) # user id of the owner (extract from JWT token)
-  folder = Column(String, nullable=True) # folder name where the file is stored (optional)
   content_type = Column(String, nullable=True) # MIME type of the file (e.g. "application/pdf", "image/png")
   uploaded_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc)) # timestamp of when the file was uploaded
   folder_id = Column(Integer, ForeignKey('study_folders.id'), nullable=False)
