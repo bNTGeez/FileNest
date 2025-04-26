@@ -4,6 +4,7 @@ from app.database import get_db
 from app import models
 from app.auth import get_current_user
 from app.schemas import FolderResponse, FolderCreate, FolderUpdate, FolderList
+from app.utils.permissions import verify_folder_ownership
 from datetime import datetime, timezone
 router = APIRouter()
 
@@ -26,16 +27,14 @@ def create_folder(folder_data: FolderCreate, db: Session = Depends(get_db), curr
 
 @router.get("/folders/{folder_id}", response_model=FolderResponse)
 def get_folder_by_id(folder_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-  folder = db.query(models.StudyFolder).filter(models.StudyFolder.id == folder_id, models.StudyFolder.user_id == current_user.id).first()
+  folder = verify_folder_ownership(db, folder_id, current_user.id)
   if not folder:
     raise HTTPException(status_code=404, detail="Folder not found")
   return folder
 
 @router.put("/folders/{folder_id}", response_model=FolderResponse)
 def update_folder(folder_id: int, folder_data: FolderUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-
-
-  folder = db.query(models.StudyFolder).filter(models.StudyFolder.id == folder_id, models.StudyFolder.user_id == current_user.id).first()
+  folder = verify_folder_ownership(db, folder_id, current_user.id)
   if not folder:
     raise HTTPException(status_code=404, detail="Folder not found")
 
@@ -53,7 +52,7 @@ def update_folder(folder_id: int, folder_data: FolderUpdate, db: Session = Depen
 
 @router.delete("/folders/{folder_id}", status_code=204)
 def delete_folder(folder_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-  folder = db.query(models.StudyFolder).filter(models.StudyFolder.id == folder_id, models.StudyFolder.user_id == current_user.id).first()
+  folder = verify_folder_ownership(db, folder_id, current_user.id)
   if not folder:
     raise HTTPException(status_code=404, detail="Folder not found")
   db.delete(folder)

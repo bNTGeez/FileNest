@@ -1,40 +1,89 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
 from app.auth import get_current_user
 from app.schemas import FlashcardResponse, FlashcardCreate, FlashcardList, FlashcardGenerationRequest, FlashcardUpdate
 from app.utils.gpt import generate_flashcards
+from app.utils.permissions import verify_folder_access, verify_flashcard_access, verify_folder_ownership
+from datetime import datetime, timezone
+from typing import List
+
 router = APIRouter()
 
-
-@router.get("/folders/{folder_id}/flashcards", response_model=FlashcardList)
+@router.get("/folders/{folder_id}/flashcards", response_model=List[FlashcardResponse])
 def get_flashcards(folder_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-  # Check if folder exists and user is the owner
-  folder = db.query(models.StudyFolder).filter(models.StudyFolder.id == folder_id, models.StudyFolder.user_id == current_user.id).first()
-  
-  # If user is not the owner, check if they have shared access
-  if not folder:
-    # Check for shared access
-    shared_access = db.query(models.FolderShare).filter(
-      models.FolderShare.folder_id == folder_id,
-      models.FolderShare.user_id == current_user.id,
-      models.FolderShare.invitation_accepted == True
-    ).first()
+    # Verify folder exists and user has at least read access
+    folder = verify_folder_access(db, folder_id, current_user.id, ["owner", "write", "read"])
     
-    # If no shared access either, folder not found or not accessible
-    if not shared_access:
-      raise HTTPException(status_code=404, detail="Folder not found or you don't have access")
-    
-    # Double-check folder exists
-    folder = db.query(models.StudyFolder).filter(models.StudyFolder.id == folder_id).first()
-    if not folder:
-      raise HTTPException(status_code=404, detail="Folder not found")
-  
-  # Get flashcards for the folder
-  flashcards = db.query(models.Flashcard).filter(models.Flashcard.folder_id == folder_id).all()
-  return {"flashcards": flashcards}
+    flashcards = db.query(models.Flashcard).filter(models.Flashcard.folder_id == folder_id).all()
+    return flashcards
 
+@router.post("/folders/{folder_id}/flashcards", response_model=FlashcardResponse)
+def create_flashcard(
+    folder_id: int,
+    flashcard_data: FlashcardCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # Verify folder exists and user has write access
+    folder = verify_folder_access(db, folder_id, current_user.id, ["owner", "write"])
+    
+    flashcard = models.Flashcard(
+        front=flashcard_data.front,
+        back=flashcard_data.back,
+        difficulty=flashcard_data.difficulty,
+        folder_id=folder_id
+    )
+    db.add(flashcard)
+    db.commit()
+    db.refresh(flashcard)
+    
+    return flashcard
+
+@router.get("/flashcards/{flashcard_id}", response_model=FlashcardResponse)
+def get_flashcard(
+    flashcard_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    flashcard = verify_flashcard_access(db, flashcard_id, current_user.id, ["owner", "write", "read"])
+    return flashcard
+
+@router.put("/flashcards/{flashcard_id}", response_model=FlashcardResponse)
+def update_flashcard(
+    flashcard_id: int,
+    flashcard_data: FlashcardUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    flashcard = verify_flashcard_access(db, flashcard_id, current_user.id, ["owner", "write"])
+    
+    if flashcard_data.front is not None:
+        flashcard.front = flashcard_data.front
+    if flashcard_data.back is not None:
+        flashcard.back = flashcard_data.back
+    if flashcard_data.difficulty is not None:
+        flashcard.difficulty = flashcard_data.difficulty
+    
+    flashcard.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(flashcard)
+    
+    return flashcard
+
+@router.delete("/flashcards/{flashcard_id}", status_code=204)
+def delete_flashcard(
+    flashcard_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    flashcard = verify_flashcard_access(db, flashcard_id, current_user.id, ["owner", "write"])
+    
+    db.delete(flashcard)
+    db.commit()
+    
+    return {"message": "Flashcard deleted successfully"}
 
 @router.post("/folders/{folder_id}/flashcards", response_model=FlashcardList)
 def create_flashcards(folder_id: int, flashcard_data: FlashcardGenerationRequest, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -78,30 +127,6 @@ def create_flashcards(folder_id: int, flashcard_data: FlashcardGenerationRequest
     db.refresh(flashcard)
 
   return {"flashcards": created_flashcards}
-
-@router.get("/flashcards/{flashcard_id}", response_model=FlashcardResponse)
-def get_individual_flashcard(flashcard_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-  # First try to find the flashcard by ID and user
-  flashcard = db.query(models.Flashcard).filter(models.Flashcard.id == flashcard_id).first()
-  
-  if not flashcard:
-    raise HTTPException(status_code=404, detail="Flashcard not found")
-  
-  # If user owns the flashcard, return it
-  if flashcard.user_id == current_user.id:
-    return flashcard
-    
-  # Otherwise, check if they have shared access to the folder
-  shared_access = db.query(models.FolderShare).filter(
-    models.FolderShare.folder_id == flashcard.folder_id,
-    models.FolderShare.user_id == current_user.id,
-    models.FolderShare.invitation_accepted == True
-  ).first()
-  
-  if not shared_access:
-    raise HTTPException(status_code=403, detail="Not authorized to access this flashcard")
-  
-  return flashcard
 
 @router.get("/flashcards", response_model=FlashcardList)
 def get_all_flashcards(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
