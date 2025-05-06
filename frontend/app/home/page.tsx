@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
-const Homepage = () => {
+export default function Homepage() {
   const router = useRouter();
   return (
     <div>
@@ -10,4 +10,3 @@ const Homepage = () => {
   );
 };
 
-export default Homepage;

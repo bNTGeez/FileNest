@@ -7,10 +7,13 @@ export default function Navbar() {
 
   return (
     <nav className="w-full flex items-center justify-between px-6 py-4 bg-gray-100 border-b mb-8">
-      <div className="font-bold text-lg">StudyVault</div>
+      <Link href="/" className="font-bold text-lg">StudyVault</Link>
       <div className="flex items-center gap-4">
         {user && (
           <>
+            <Link href="/dashboard" className="text-blue-600 hover:underline">
+              Dashboard
+            </Link>
             <Link href="/profile" className="text-blue-600 hover:underline">
               Profile
             </Link>

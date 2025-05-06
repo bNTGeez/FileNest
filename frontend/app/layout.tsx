@@ -2,7 +2,7 @@
 
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/app/components/Navbar";
 
 export default function RootLayout({
   children,
