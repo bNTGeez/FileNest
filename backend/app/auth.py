@@ -20,17 +20,10 @@ ALGORITHM = "HS256" # HS256 (HMAC with SHA-256) is a standard algorithm for JWT.
 # OAuth2PasswordBearer handles token extraction from requests
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+# Create a JWT token with the provided data and expiration time
+# param: data: Dictionary that contains data to include in the token (user ID)
+# param: expires_delta: Optional expiration time
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    """
-    Create a JWT token with the provided data and expiration time
-    
-    Parameters:
-    - data: Dictionary that contains data to include in the token (user ID)
-    - expires_delta: Optional expiration time
-    
-    Returns:
-    - Encoded JWT token as string
-    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -40,20 +33,12 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
+# Get the current user from the JWT token
+# param: token: JWT token (extracted by OAuth2PasswordBearer)
+# param: db: Database session
 def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
-    """
-    Verify JWT token and extract the current user
-    
-    Parameters:
-    - token: JWT token (extracted by OAuth2PasswordBearer)
-    - db: Database session
-    
-    Returns:
-    - User object if token is valid
-    
-    Raises:
-    - HTTPException with 401 status if token is invalid
-    """
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -77,19 +62,11 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session 
         raise credentials_exception
     return user
 
+# Get the current active user
+# param: current_user: User object from get_current_user dependency
 def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)]
 ):
-    """
-    Check if the current user is active
-
-    Parameters:
-    - current_user: User object from get_current_user dependency
-    
-    Returns:
-    - User object if active
-
-    """
 
     return current_user
     

@@ -17,11 +17,10 @@ s3 = boto3_client(
   aws_secret_access_key=AWS_SECRET_ACCESS_KEY
 )
 
+# upload a file-like object under `key` in your bucket
+# param: file_object: The file-like object to upload
+# param: key: The key of the file in the bucket
 async def upload_file(file_object, key) -> str:
-  """
-    Uploads a file-like object under `key` in your bucket.
-    Returns the file URL on success.
-    """
   try:
     s3.upload_fileobj(
       Fileobj=file_object,
@@ -37,12 +36,10 @@ async def upload_file(file_object, key) -> str:
   # Generate a URL for immediate reference (won't be accessible without authentication)
   return f"https://{S3_BUCKET}.s3.{AWS_REGION}.amazonaws.com/{key}"
 
+# generate a presigned URL for the file under `key` in your bucket
+# param: key: The key of the file in the bucket
+# param: expiration: The expiration time of the presigned URL
 def generate_presigned_url(key: str, expiration: int = 300) -> str:
-  """
-    Generates a presigned URL for the file under `key` in your bucket.
-    Returns the presigned URL on success.
-    Default expiration is 5 minutes.
-    """
   try:
     response = s3.generate_presigned_url(
       ClientMethod='get_object',
