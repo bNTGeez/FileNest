@@ -13,18 +13,21 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface SidebarProps {
-  onCreateFolder: (name: string) => void;
+  onCreateFolder: (name: string, description: string | null) => void;
 }
 
 export default function Sidebar({ onCreateFolder }: SidebarProps) {
   const [isNewFolderDialogOpen, setIsNewFolderDialogOpen] = useState(false);
   const [folderName, setFolderName] = useState("");
+  const [folderDescription, setFolderDescription] = useState("");
 
   const handleNewFolder = () => {
     setIsNewFolderDialogOpen(true);
@@ -33,8 +36,10 @@ export default function Sidebar({ onCreateFolder }: SidebarProps) {
   const handleCreateFolder = (e: React.FormEvent) => {
     e.preventDefault();
     const name = folderName.trim() || "Untitled Folder";
-    onCreateFolder(name);
+    const description = folderDescription.trim() || null;
+    onCreateFolder(name, description);
     setFolderName("");
+    setFolderDescription("");
     setIsNewFolderDialogOpen(false);
   };
 
@@ -61,6 +66,9 @@ export default function Sidebar({ onCreateFolder }: SidebarProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New Folder</DialogTitle>
+            <DialogDescription>
+              Create a new folder to organize your files.
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateFolder}>
             <div className="grid gap-4 py-4">
@@ -72,6 +80,20 @@ export default function Sidebar({ onCreateFolder }: SidebarProps) {
                   onChange={(e) => setFolderName(e.target.value)}
                   placeholder="Enter folder name"
                   autoFocus
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="folderDescription">
+                  Description (optional)
+                </Label>
+                <Textarea
+                  id="folderDescription"
+                  value={folderDescription}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    setFolderDescription(e.target.value)
+                  }
+                  placeholder="Enter folder description"
+                  rows={3}
                 />
               </div>
             </div>
