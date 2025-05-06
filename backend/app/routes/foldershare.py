@@ -187,3 +187,16 @@ def accept_share(
     db.refresh(share)
     
     return share
+
+@router.get("/pending-invitations", response_model=ShareList)
+def get_pending_invitations(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # Get all pending share invitations for the current user's email
+    pending_invitations = db.query(models.FolderShare).filter(
+        models.FolderShare.invitation_email == current_user.email,
+        models.FolderShare.invitation_accepted == False
+    ).all()
+    
+    return {"shares": pending_invitations}
