@@ -37,3 +37,16 @@ def generate_flashcards(
     flashcards = flashcards_data.get("flashcards", []) # asking chatgpt to return the flashcards as "flashcards" as a list
     return flashcards
     
+def generate_response(
+    chatMessage: str
+): 
+    prompt = "You are a helpful assistant that can answer questions and help with tasks."
+
+    response = client.chat.completions.create(
+        model = 'gpt-3.5-turbo',
+        messages = [{"role": "assistant", "content": prompt},
+                    {"role": "user", "content": chatMessage}],
+    )
+
+    response_content = response.choices[0].message.content
+    return response_content
