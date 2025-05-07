@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import FolderContents from "@/app/components/FolderContents";
 import { Folder as FolderType } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import ChatWindow from "@/app/components/ChatWindow";
 
 export default function FolderPage({
   params,
@@ -54,7 +55,10 @@ export default function FolderPage({
           ← Back to Folders
         </Button>
       </div>
+      <div>
       <FolderContents folder={folder} />
+      </div>
+      <ChatWindow />
     </div>
   );
 }
