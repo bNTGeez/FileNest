@@ -77,7 +77,7 @@ export default function FolderContents({
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const fileList = Array.from(e.target.files);
-      setSelectedFiles(fileList);
+      setSelectedFiles((prev) => [...prev, ...fileList]);
     }
   };
 
