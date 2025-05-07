@@ -39,14 +39,21 @@ async def upload_file(file_object, key) -> str:
 # generate a presigned URL for the file under `key` in your bucket
 # param: key: The key of the file in the bucket
 # param: expiration: The expiration time of the presigned URL
-def generate_presigned_url(key: str, expiration: int = 300) -> str:
+# param: response_headers: Optional dict of response headers to modify the content disposition
+def generate_presigned_url(key: str, expiration: int = 300, response_headers: dict = None) -> str:
   try:
+    params = {
+      'Bucket': S3_BUCKET,
+      'Key': key
+    }
+    
+    # Add response headers if provided
+    if response_headers:
+      params.update(response_headers)
+    
     response = s3.generate_presigned_url(
       ClientMethod='get_object',
-      Params={
-        'Bucket': S3_BUCKET,
-        'Key': key
-      },
+      Params=params,
       ExpiresIn=expiration
     )
     return response
