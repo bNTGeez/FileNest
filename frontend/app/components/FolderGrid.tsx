@@ -34,6 +34,8 @@ export default function FolderGrid({
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState<string>("");
   const [selectedFolder, setSelectedFolder] = useState<FolderType | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
 
   if (selectedFolder) {
     return (
@@ -110,7 +112,8 @@ export default function FolderGrid({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(folder.id);
+                  setFolderToDelete(folder.id);
+                  setDeleteDialogOpen(true);
                 }}
                 className="p-1 hover:bg-red-100 rounded"
                 title="Delete"
@@ -177,6 +180,37 @@ export default function FolderGrid({
               <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Folder</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this folder?
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (folderToDelete) {
+                  onDelete(folderToDelete);
+                }
+                setDeleteDialogOpen(false);
+                setFolderToDelete(null);
+              }}
+            >
+              Delete
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

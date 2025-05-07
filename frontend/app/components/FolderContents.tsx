@@ -87,7 +87,6 @@ export default function FolderContents({
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
-      console.log("No files selected");
       return;
     }
     setIsUploading(true);
@@ -113,14 +112,14 @@ export default function FolderContents({
         throw new Error(`Upload failed: ${response.status} ${responseText}`);
       }
 
-      const uploadedFile = JSON.parse(responseText);
+      const uploadedFiles = JSON.parse(responseText);
       setFiles((prevFiles) => [
         ...prevFiles,
-        {
+        ...uploadedFiles.map((uploadedFile: any) => ({
           id: uploadedFile.file_id,
           name: uploadedFile.filename,
           url: uploadedFile.url,
-        },
+        })),
       ]);
       setSelectedFiles([]);
       setIsDialogOpen(false);
