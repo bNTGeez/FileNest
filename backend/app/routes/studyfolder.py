@@ -55,6 +55,8 @@ def delete_folder(folder_id: int, db: Session = Depends(get_db), current_user: m
   folder = verify_folder_ownership(db, folder_id, current_user.id)
   if not folder:
     raise HTTPException(status_code=404, detail="Folder not found")
+  db.query(models.File).filter_by(folder_id = folder_id).delete()
+  db.commit()
   db.delete(folder)
   db.commit()
   return {"message": "Folder deleted successfully"}

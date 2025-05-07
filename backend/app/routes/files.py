@@ -7,7 +7,7 @@ from app.auth import get_current_user
 from uuid import uuid4
 from datetime import datetime, timezone
 import os
-
+from typing import List
 # group all /files endpoints together
 router = APIRouter()
 
@@ -23,7 +23,7 @@ def get_files(db: Session = Depends(get_db)):
 # Return the file URL
 @router.post("/upload")
 async def upload_file_route(
-    file: UploadFile = File(...),
+    file: List[UploadFile] = File(...),
     folder_id: int = Form(None),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
@@ -46,47 +46,50 @@ async def upload_file_route(
             db.commit()
             db.refresh(default_folder)
         folder_id = default_folder.id
+    uploaded_files = []
+    for f in file:
+      # make the filename unique if it already exists
+      original_filename = f.filename
+      base_name, extension = os.path.splitext(original_filename)
+      unique_filename = original_filename
+      duplicate_count = 1
 
-    # make the filename unique if it already exists
-    original_filename = file.filename
-    base_name, extension = os.path.splitext(original_filename)
-    unique_filename = original_filename
-    duplicate_count = 1
+      # Check if the filename is unique in the folder and increment if needed 
+      while db.query(models.File).filter_by(folder_id=folder_id, filename=unique_filename).first():
+          unique_filename = f"{base_name} ({duplicate_count}){extension}"
+          duplicate_count += 1
 
-    # Check if the filename is unique in the folder and increment if needed 
-    while db.query(models.File).filter_by(folder_id=folder_id, filename=unique_filename).first():
-        unique_filename = f"{base_name} ({duplicate_count}){extension}"
-        duplicate_count += 1
+      # Generate a unique S3 key for storage
+      s3_key = f"{user_id}/{uuid4().hex}_{unique_filename}"
 
-    # Generate a unique S3 key for storage
-    s3_key = f"{user_id}/{uuid4().hex}_{unique_filename}"
+      # Upload the file to S3
+      try:
+          url = await upload_file(f.file, s3_key)
+      except Exception as e:
+          raise HTTPException(status_code=500, detail=str(e))
 
-    # Upload the file to S3
-    try:
-        url = await upload_file(file.file, s3_key)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+      # Save file metadata to the database
+      record = models.File(
+          filename=unique_filename,
+          s3_key=s3_key,
+          user_id=user_id,
+          content_type=f.content_type,
+          folder_id=folder_id,
+      )
+      db.add(record)
+      db.commit()
+      db.refresh(record)
 
-    # Save file metadata to the database
-    record = models.File(
-        filename=unique_filename,
-        s3_key=s3_key,
-        user_id=user_id,
-        content_type=file.content_type,
-        folder_id=folder_id,
-    )
-    db.add(record)
-    db.commit()
-    db.refresh(record)
-
-    # Return file info to the frontend
-    return {
+      # Return file info to the frontend
+      uploaded_files.append({
         "file_id": record.id,
         "url": url,
         "filename": record.filename
-    }
+      })
 
-# download the file from S3
+    return uploaded_files
+
+  # download the file from S3
 @router.get("/files/{file_id}/download")
 def download_file(file_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
   # Extract user_id from the User object
@@ -109,7 +112,7 @@ def download_file(file_id: int, db: Session = Depends(get_db), current_user: mod
     )
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
-  
+
   return {"url": signed_url}
 
 # preview the file from S3
