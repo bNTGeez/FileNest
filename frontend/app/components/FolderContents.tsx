@@ -27,13 +27,9 @@ interface UploadedFile {
 
 interface FolderContentsProps {
   folder: FolderType;
-  onFolderClick: (folderId: string) => void;
 }
 
-export default function FolderContents({
-  folder,
-  onFolderClick,
-}: FolderContentsProps) {
+export default function FolderContents({ folder }: FolderContentsProps) {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);

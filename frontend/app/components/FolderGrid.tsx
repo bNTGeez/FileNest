@@ -1,4 +1,6 @@
+"use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Folder, Edit2, Trash2 } from "lucide-react";
 import { Folder as FolderType } from "@/lib/types";
 import {
@@ -13,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import FolderContents from "./FolderContents";
 
 interface FolderGridProps {
   folders: FolderType[];
@@ -33,34 +34,10 @@ export default function FolderGrid({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState<string>("");
-  const [selectedFolder, setSelectedFolder] = useState<FolderType | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
 
-  if (selectedFolder) {
-    return (
-      <div>
-        <div className="mb-4">
-          <Button
-            variant="outline"
-            onClick={() => setSelectedFolder(null)}
-            className="mb-4"
-          >
-            ← Back to Folders
-          </Button>
-        </div>
-        <FolderContents
-          folder={selectedFolder}
-          onFolderClick={(folderId) => {
-            const folder = folders.find((f) => f.id === folderId);
-            if (folder) {
-              setSelectedFolder(folder);
-            }
-          }}
-        />
-      </div>
-    );
-  }
+  const router = useRouter();
 
   if (folders.length === 0) {
     return (
@@ -91,7 +68,7 @@ export default function FolderGrid({
         <div
           key={folder.id}
           className="flex flex-col gap-2 bg-white rounded shadow p-4 hover:bg-gray-100 cursor-pointer relative"
-          onClick={() => setSelectedFolder(folder)}
+          onClick={() => router.push(`/folders/${folder.id}`)}
         >
           <div className="flex items-center gap-2">
             <Folder className="h-6 w-6 text-blue-500 shrink-0" />
